@@ -161,7 +161,7 @@ def render_home_page():
     st.markdown("---")
     st.markdown("""
     <div style="text-align: center; color: #666; padding: 2rem 0;">
-        <p>Built with ❤️ using Streamlit, Plotly, and the RiskLens quantitative finance library</p>
+        <p>Built with ❤️ using Streamlit, Plotly, and the RiskLens quantitative finance library by Suket Kamboj.</p>
         <p>For support and documentation, visit the project repository</p>
     </div>
     """, unsafe_allow_html=True)

@@ -13,9 +13,10 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from config import configure_streamlit
-from pages.home import render_home_page
-from pages.heatmap_analysis import render_heatmap_page
-from pages.chart_analysis import render_chart_page
+from views.home import render_home_page
+from views.heatmap_analysis import render_heatmap_page
+from views.chart_analysis import render_chart_page
+from views.about_developer import render_about_developer_page
 
 
 def main():
@@ -38,7 +39,8 @@ def main():
         [
             "🏠 Home",
             "🔥 Heatmap Analysis", 
-            "📊 Chart Analysis"
+            "📊 Chart Analysis",
+            "👨‍💻 About Developer"
         ],
         index=0
     )
@@ -52,6 +54,7 @@ def main():
             <li><strong>🏠 Home:</strong> Overview and getting started</li>
             <li><strong>🔥 Heatmaps:</strong> Interactive volatility visualizations</li>
             <li><strong>📊 Charts:</strong> Statistical analysis and comparisons</li>
+            <li><strong>👨‍💻 About:</strong> Meet the developer and project info</li>
         </ul>
     </div>
     """, unsafe_allow_html=True)
@@ -76,7 +79,7 @@ def main():
     st.sidebar.markdown("""
     <div style="text-align: center; color: #666; font-size: 0.8rem;">
         <p>RiskLens v1.0</p>
-        <p>Built with Streamlit & Plotly</p>
+        <p>Built with ❤️ by Suket Kamboj</p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -87,6 +90,8 @@ def main():
         render_heatmap_page()
     elif page == "📊 Chart Analysis":
         render_chart_page()
+    elif page == "👨‍💻 About Developer":
+        render_about_developer_page()
 
 
 if __name__ == "__main__":
