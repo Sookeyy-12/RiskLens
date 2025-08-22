@@ -11,7 +11,16 @@ def get_sector_mapping(tickers: List[str]) -> pd.DataFrame:
     Get sector mapping for given tickers. First tries to load from CSV,
     if not available, fetches from yfinance and saves to CSV.
     """
-    csv_path = "../data/sector_mapping.csv"
+    import os
+    
+    # Get the absolute path to the data directory
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(current_dir)  # Go up one level from src/
+    data_dir = os.path.join(project_root, "data")
+    csv_path = os.path.join(data_dir, "sector_mapping.csv")
+    
+    # Create data directory if it doesn't exist
+    os.makedirs(data_dir, exist_ok=True)
     
     try:
         # Try to load existing mapping
@@ -45,7 +54,11 @@ def get_sector_mapping(tickers: List[str]) -> pd.DataFrame:
         sector_df = pd.concat([sector_df, new_df], ignore_index=True)
         
         # Save updated mapping
-        sector_df.to_csv(csv_path, index=False)
+        try:
+            sector_df.to_csv(csv_path, index=False)
+            print(f"Sector mapping saved to: {csv_path}")
+        except Exception as e:
+            print(f"Warning: Could not save sector mapping: {e}")
     
     # Return only requested tickers
     return sector_df[sector_df['Ticker'].isin(tickers)]
@@ -63,24 +76,52 @@ def fetch_ohlcv(
     if provider == 'yfinance':
         data = yf.download(tickers, start=start_date, end=end_date, group_by='ticker', auto_adjust=False)
 
-        # If single ticker, wrap it in a dict-like structure
+        # Handle single ticker case
         if len(tickers) == 1:
             ticker = tickers[0]
-            df = data.copy()
+            
+            # For single ticker, yfinance returns a simple DataFrame
+            # We need to ensure it has the right structure
+            if isinstance(data.columns, pd.MultiIndex):
+                # If it's already MultiIndex, extract the ticker data
+                df = data[ticker].copy() if ticker in data.columns.levels[0] else data.copy()
+            else:
+                # Simple DataFrame - this is the normal case for single ticker
+                df = data.copy()
+            
+            # Add ticker column and create MultiIndex
+            df = df.reset_index()  # Make Date a regular column
             df['Ticker'] = ticker
-            df = df.reset_index().set_index(['Date', 'Ticker'])
+            df = df.set_index(['Date', 'Ticker'])
+            
         else:
+            # Multiple tickers case
             frames = []
             for ticker in tickers:
-                df = data[ticker].copy()
-                df['Ticker'] = ticker
-                df = df.reset_index().set_index(['Date', 'Ticker'])
-                frames.append(df)
-            df = pd.concat(frames)
+                try:
+                    if isinstance(data.columns, pd.MultiIndex):
+                        # Normal multi-ticker case
+                        ticker_data = data[ticker].copy()
+                    else:
+                        # Edge case: single ticker in list but returned as simple DataFrame
+                        ticker_data = data.copy()
+                    
+                    ticker_data = ticker_data.reset_index()
+                    ticker_data['Ticker'] = ticker
+                    ticker_data = ticker_data.set_index(['Date', 'Ticker'])
+                    frames.append(ticker_data)
+                except KeyError:
+                    print(f"Warning: Could not find data for ticker {ticker}")
+                    continue
+            
+            if frames:
+                df = pd.concat(frames)
+            else:
+                raise ValueError("No valid data found for any of the provided tickers")
 
         return df
     else:
-        pass
+        raise NotImplementedError("Only yfinance provider is currently supported")
     
 def fetch_index_data(
     index_symbol: str,
